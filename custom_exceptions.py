@@ -1,9 +1,10 @@
-
+from stocks import Stock
+from stocks import Order
 
 class WrongStockTypeException(Exception):
 
     def __init__(self):
-        self.message = f"Stock Type can only be {Stock.STOCK_TYPES}."
+        self.message = f"Stock Type can only be {Order.STOCK_TYPES}."
         super().__init__(self.message)
 
 
@@ -37,7 +38,3 @@ class OutOfStockException(Exception):
         self.message = f"Ordered quantity not available at this time. " \
                        f"Try with lower quantity."
         super().__init__(self.message)
-
-
-if __name__ == '__main__':
-    from stocks import Stock

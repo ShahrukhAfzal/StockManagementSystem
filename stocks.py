@@ -37,8 +37,6 @@
 import time
 import uuid
 
-from custom_exceptions import (WrongStockTypeException, DuplicateStockException, WrongObjectTypeException,
-                               WrongStockQuantityException, StockNotFoundException, OutOfStockException)
 from utils import SingletonMeta
 
 
@@ -49,6 +47,9 @@ class User:
         self.username = username
         self.balance = balance
         self.order_history = order_history
+
+    def can_buy_stock(self, stock_price):
+        return self.balance >= stock_price
 
 
 class Order:
@@ -83,7 +84,7 @@ class Stocks(metaclass=SingletonMeta):
         self.objects = dict()
 
     def add(self, obj):
-        if obj.__class__ != Stock:
+        if not isinstance(obj, Stock):
             raise WrongObjectTypeException
 
         if self.objects.get(obj.name):
@@ -106,6 +107,9 @@ class Stock:
         self.price = price
         stocks = Stocks()
         stocks.add(self)
+
+    def check_available_quantity(self, quantity):
+        return self.quantity >= quantity
 
     @property
     def name(self):
@@ -149,27 +153,19 @@ class Buy:
     def validate(stock_name, quantity, user):
         stocks = Stocks()
         stock = stocks.get_stock(stock_name)
-        if not user:
-            raise Exception("No user passed")
+        if not (user and isinstance(user, User)):
+            raise Exception("Invalid User")
 
         if not stock:
             raise StockNotFoundException(stock_name)
 
-        if not Buy.check_available_quantity(stock, quantity):
+        if not stock.check_available_quantity(quantity):
             raise OutOfStockException
 
-        if not Buy.check_available_balance(user, stock):
+        if not user.can_buy_stock(stock.price):
             raise Exception(f"Sorry, you don't have enough balance to buy {stock.name}")
 
         return True
-
-    @staticmethod
-    def check_available_quantity(stock, quantity):
-        return stock.quantity >= quantity
-
-    @staticmethod
-    def check_available_balance(user, stock):
-        return user.balance >= stock.price
 
 
 # Sell
@@ -179,6 +175,11 @@ class Sell:
 
 
 if __name__ == '__main__':
+    from custom_exceptions import (WrongStockTypeException, DuplicateStockException, WrongObjectTypeException,
+                                   WrongStockQuantityException, StockNotFoundException, OutOfStockException)
+
     s1 = Stock(name="stock1", quantity=10, price=999)
     s2 = Stock(name="stock2", quantity=1, price=674)
+    u1 = User("shahrukh", 10000)
     print(Stocks())
+    Buy(s1.name, 1, u1)
