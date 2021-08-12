@@ -15,12 +15,6 @@
 #         - quantity
 #         - amount
 
-# User
-#     - should have few fields like
-#         - username
-#         - balance
-#         - order_history
-
 # Stock
 #     - should maintain some sort of inventory
 #         - time
@@ -43,7 +37,7 @@
 import time
 import uuid
 
-from custom_exceptions import (WrongStockTypeException, DuplicateStockException, WrongObjectTypeException, \
+from custom_exceptions import (WrongStockTypeException, DuplicateStockException, WrongObjectTypeException,
                                WrongStockQuantityException, StockNotFoundException, OutOfStockException)
 from utils import SingletonMeta
 
@@ -86,19 +80,19 @@ class Order:
 
 class Stocks(metaclass=SingletonMeta):
     def __init__(self):
-        self.objects = list()
+        self.objects = dict()
 
     def add(self, obj):
         if obj.__class__ != Stock:
             raise WrongObjectTypeException
 
-        self.objects.append(obj)
+        if self.objects.get(obj.name):
+            raise DuplicateStockException
+
+        self.objects[obj.name] = obj
 
     def get_stock(self, name):
-        for each in self.objects:
-            if each.name == name:
-                return each
-        return None
+        return self.objects.get(name)
 
     def __repr__(self):
         return f"Total stocks available {len(self.objects)}"
@@ -120,9 +114,6 @@ class Stock:
     @name.setter
     def name(self, value):
         stocks = Stocks()
-        if stocks.get_stock(value):
-            raise DuplicateStockException
-
         self._name = value
 
     @property
@@ -190,7 +181,4 @@ class Sell:
 if __name__ == '__main__':
     s1 = Stock(name="stock1", quantity=10, price=999)
     s2 = Stock(name="stock2", quantity=1, price=674)
-    u1 = User("shahrukh", 1000)
-    print(u1.username)
-    buy = Buy("stock1", 1, u1)
-# Buy.validate("stock1", None, None)
+    print(Stocks())
