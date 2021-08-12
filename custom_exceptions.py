@@ -1,10 +1,10 @@
 from stocks import Stock
-from stocks import Order
+from stocks import Orders
 
 class WrongStockTypeException(Exception):
 
     def __init__(self):
-        self.message = f"Stock Type can only be {Order.STOCK_TYPES}."
+        self.message = f"Stock Type can only be {Orders.STOCK_TYPES}."
         super().__init__(self.message)
 
 
@@ -23,7 +23,7 @@ class WrongObjectTypeException(Exception):
 
 class WrongStockQuantityException(Exception):
     def __init__(self):
-        self.message = f"Quantity should be greater than 0"
+        self.message = f"Quantity should be greater than or equal to 0"
         super().__init__(self.message)
 
 

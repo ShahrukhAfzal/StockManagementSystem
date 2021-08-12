@@ -53,19 +53,37 @@ class User:
 
 
 class Order:
-    STOCK_TYPES = ("buy", "sell")
-
-    def __init__(self, stock_id, user_id, quantity, amount, stock_type):
-        self.stock_id = stock_id
-        self.user_id = user_id
+    def __init__(self, stock, quantity, user, stock_type):
+        self.stock = stock
+        self.user = user
         self.quantity = quantity
-        self.amount = amount
+        self.order_amount = self.get_order_amount(stock, quantity)
         self.stock_type = stock_type
-        self.order_id = self.generate_order_id(stock_type)
+
+    @staticmethod
+    def get_order_amount(stock, quantity):
+        return stock.price * quantity
 
     @staticmethod
     def generate_order_id(stock_type):
         return "stock_" + f"{stock_type}_" + str(uuid.uuid1())[:4] + str(int(time.time()))
+
+
+class Orders(metaclass=SingletonMeta):
+    STOCK_TYPES = ("buy", "sell")
+
+    def __init__(self, **kwargs):
+        orders = kwargs.get("orders")
+        if orders is None:
+            self.orders = list()
+
+    def create(self, stock, quantity, user, stock_type):
+        order = Order(stock, quantity, user, stock_type)
+        print(stock.quantity)
+        stock.update_stock(quantity, stock_type)
+        self.orders.append(order)
+        print(self.orders)
+        print(stock.quantity)
 
     @property
     def stock_type(self):
@@ -102,11 +120,18 @@ class Stocks(metaclass=SingletonMeta):
 class Stock:
 
     def __init__(self, name, quantity, price):
+        self.stock_id = None
         self.name = name
         self.quantity = quantity
         self.price = price
         stocks = Stocks()
         stocks.add(self)
+
+    def update_stock(self, quantity, stock_type):
+        if stock_type.lower() == 'buy':
+            self.quantity -= quantity
+        elif stock_type.lower() == 'sell':
+            self.quantity += quantity
 
     def check_available_quantity(self, quantity):
         return self.quantity >= quantity
@@ -117,7 +142,6 @@ class Stock:
 
     @name.setter
     def name(self, value):
-        stocks = Stocks()
         self._name = value
 
     @property
@@ -126,7 +150,7 @@ class Stock:
 
     @quantity.setter
     def quantity(self, value):
-        if value <= 0:
+        if value < 0:
             raise WrongStockQuantityException
         self._quantity = value
 
@@ -134,30 +158,24 @@ class Stock:
         return f"{self.name}"
 
 
-# Buy
-#     - check if the ordered stocks are available or not
-#     - update count accordingly
-#         - type(BUY/SELL)
-#         - order_id
-
-
 class Buy:
     def __init__(self, stock_name, quantity, user: User):
-        self.validate(stock_name, quantity, user)
-        self.order()
-
-    def order(self):
-        pass
-
-    @staticmethod
-    def validate(stock_name, quantity, user):
         stocks = Stocks()
         stock = stocks.get_stock(stock_name)
-        if not (user and isinstance(user, User)):
-            raise Exception("Invalid User")
-
         if not stock:
             raise StockNotFoundException(stock_name)
+        self.validate(stock, quantity, user)
+        self.order(stock, quantity, user)
+
+    @staticmethod
+    def order(stock, quantity, user):
+        order = Orders()
+        order.create(stock, quantity, user, stock_type="Buy")
+
+    @staticmethod
+    def validate(stock, quantity, user):
+        if not (user and isinstance(user, User)):
+            raise Exception("Invalid User")
 
         if not stock.check_available_quantity(quantity):
             raise OutOfStockException
@@ -181,5 +199,5 @@ if __name__ == '__main__':
     s1 = Stock(name="stock1", quantity=10, price=999)
     s2 = Stock(name="stock2", quantity=1, price=674)
     u1 = User("shahrukh", 10000)
-    print(Stocks())
     Buy(s1.name, 1, u1)
+    Buy(s1.name, 3, u1)
