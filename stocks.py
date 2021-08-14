@@ -52,6 +52,12 @@ class User:
     def can_buy_stock(self, stock_price):
         return self.balance >= stock_price
 
+    def update_user_balance(self, stock, quantity, stock_type):
+        transaction_amount = stock.price * quantity
+        if stock_type.lower() == 'buy':
+            transaction_amount *= -1
+        self.balance += transaction_amount
+
 
 class Order:
     def __init__(self, stock, quantity, user, stock_type):
@@ -81,12 +87,10 @@ class Orders(metaclass=SingletonMeta):
     def create(self, stock, quantity, user, stock_type):
         order = Order(stock, quantity, user, stock_type)
         print_order_helper_text("Before", stock_type, quantity, stock)
-        # print(f"Before {stock_type}ing quantity is {stock.quantity}")
         stock.update_stock(quantity, stock_type)
         self.orders.append(order)
         print_order_helper_text("After", stock_type, quantity, stock)
-
-        # print(f"After {stock_type}ing quantity is {stock.quantity}")
+        user.update_user_balance(stock, quantity, stock_type)
 
     @property
     def stock_type(self):
