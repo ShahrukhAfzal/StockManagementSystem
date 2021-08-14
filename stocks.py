@@ -165,19 +165,22 @@ class Stock:
         return f"{self.name}"
 
 
-class Buy:
+class Transaction:
+
+    @staticmethod
+    def order(stock, quantity, user, stock_type):
+        order = Orders()
+        order.create(stock, quantity, user, stock_type)
+
+
+class Buy(Transaction):
     def __init__(self, stock_name, quantity, user: User):
         stocks = Stocks()
         stock = stocks.get_stock(stock_name)
         if not stock:
             raise StockNotFoundException(stock_name)
         self.validate(stock, quantity, user)
-        self.order(stock, quantity, user)
-
-    @staticmethod
-    def order(stock, quantity, user):
-        order = Orders()
-        order.create(stock, quantity, user, stock_type="Buy")
+        self.order(stock, quantity, user, "Buy")
 
     @staticmethod
     def validate(stock, quantity, user):
@@ -193,18 +196,13 @@ class Buy:
         return True
 
 
-class Sell:
+class Sell(Transaction):
     def __init__(self, stock_name, quantity, user: User):
         stocks = Stocks()
         stock = stocks.get_stock(stock_name)
         if not stock:
             raise StockNotFoundException(stock_name)
-        self.order(stock, quantity, user)
-
-    @staticmethod
-    def order(stock, quantity, user):
-        order = Orders()
-        order.create(stock, quantity, user, stock_type="Sell")
+        self.order(stock, quantity, user, "Sell")
 
 
 if __name__ == '__main__':
