@@ -37,11 +37,12 @@
 import time
 import uuid
 
-from utils import SingletonMeta
+from utils import SingletonMeta, print_order_helper_text
 
 
 class User:
     def __init__(self, username, balance=0, order_history=None):
+
         if order_history is None:
             order_history = list()
         self.username = username
@@ -79,11 +80,13 @@ class Orders(metaclass=SingletonMeta):
 
     def create(self, stock, quantity, user, stock_type):
         order = Order(stock, quantity, user, stock_type)
-        print(stock.quantity)
+        print_order_helper_text("Before", stock_type, quantity, stock)
+        # print(f"Before {stock_type}ing quantity is {stock.quantity}")
         stock.update_stock(quantity, stock_type)
         self.orders.append(order)
-        print(self.orders)
-        print(stock.quantity)
+        print_order_helper_text("After", stock_type, quantity, stock)
+
+        # print(f"After {stock_type}ing quantity is {stock.quantity}")
 
     @property
     def stock_type(self):
@@ -186,18 +189,25 @@ class Buy:
         return True
 
 
-# Sell
-#     - increase the stock quantity
 class Sell:
-    pass
+    def __init__(self, stock_name, quantity, user: User):
+        stocks = Stocks()
+        stock = stocks.get_stock(stock_name)
+        if not stock:
+            raise StockNotFoundException(stock_name)
+        self.order(stock, quantity, user)
+
+    @staticmethod
+    def order(stock, quantity, user):
+        order = Orders()
+        order.create(stock, quantity, user, stock_type="Sell")
 
 
 if __name__ == '__main__':
     from custom_exceptions import (WrongStockTypeException, DuplicateStockException, WrongObjectTypeException,
                                    WrongStockQuantityException, StockNotFoundException, OutOfStockException)
-
     s1 = Stock(name="stock1", quantity=10, price=999)
     s2 = Stock(name="stock2", quantity=1, price=674)
     u1 = User("shahrukh", 10000)
     Buy(s1.name, 1, u1)
-    Buy(s1.name, 3, u1)
+    Sell(s1.name, 2, u1)
